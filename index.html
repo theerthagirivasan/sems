@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEMS</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <div id="container">
+        <h1>Smart Employee Management System</h1>
+        <!-- name -->
+         <table id="table">
+            <tr>
+                <td><label for="username">Enter name:</label></td>
+                <td>
+                    <input type="text" 
+                    placeholder="Enter your name" 
+                    id="username" 
+                    name="username" required>
+                </td>
+            </tr>
+            <!-- password -->
+            <tr>
+                <td><label for="password">Enter password:</label></td>
+                <td><input type="password" 
+                    placeholder="Enter your password" 
+                    id="password" 
+                    name="password" required>
+                </td>
+            </tr>
+            <!-- role -->
+            <tr>
+            <td><label for="role">Select Role:</label></td>
+            <td>
+                <input type="radio" name="role" id="admin" value="Admin" required>
+                <label for="admin">Admin</label>
+                <input type="radio" name="role" id="employee" value="Employee" required>
+                <label for="employee">Employee</label>
+            </td>
+        </tr>
+            <!-- submit button -->
+            <tr>
+                <td><button id="login-btn">Login</button></td>
+            </tr>
+        </table>
+    </div>
+    <div id="welcomediv"></div>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .welcomeContainer {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 900px;
+            margin-bottom: 20px;
+        }
+        #welcomeTag {
+            font-size: 1.5rem;
+            color: #333;
+        }
+        #logoutBtn {
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: #ff5c5c;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #logoutBtn:hover {
+            background-color: #ff4040;
+        }
+        table {
+            width: 90%;
+            max-width: 900px;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #4e54c8;
+            color: #fff;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #ececff;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #fff;
+        }
+        .approve {
+            background-color: #4CAF50;
+        }
+        .approve:hover {
+            background-color: #45a049;
+        }
+        .reject {
+            background-color: #f44336;
+        }
+        .reject:hover {
+            background-color: #e53935;
+        }
+    </style>
+</head>
+<body>
+    <div class="welcomeContainer">
+        <p id="welcomeTag"></p>
+        <button id="logoutBtn">Logout</button>
+    </div>
+
+    <h2>Employee List</h2>
+    <table id="employee-list">
+        <tr>
+            <th>Employee Id</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Salary</th>
+        </tr>
+    </table>
+
+    <h2>Leave Requests</h2>
+    <table id="leaveRequestsTable">
+        <tr>
+            <th>Employee Name</th>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </table>
+
+<script>
+const localData = JSON.parse(localStorage.getItem("LoggedInUser"));
+if(!localData){
+    window.location.href = "../index.html";
+} else if(localData.role !== "Admin"){
+    window.location.href = "../employeepage/dashboard.html";
+}
+
+document.getElementById("welcomeTag").textContent = "Welcome " + localData.username;
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("LoggedInUser");
+    window.location.href = "../index.html";
+});
+
+// Employee list
+let employees = JSON.parse(localStorage.getItem("employees")) || [];
+const employeeListTable = document.getElementById("employee-list");
+
+function renderEmployees() {
+    employeeListTable.innerHTML = `
+        <tr>
+            <th>Employee Id</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Salary</th>
+        </tr>`;
+    employees.forEach(emp => {
+        let tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${emp.Id}</td>
+            <td>${emp.Name}</td>
+            <td>${emp.Department}</td>
+            <td>${emp.Designation}</td>
+            <td>${emp.Salary}</td>
+        `;
+        employeeListTable.append(tr);
+    });
+}
+renderEmployees();
+
+const leaveTable = document.getElementById("leaveRequestsTable");
+
+function renderLeaves() {
+    let leaveRequests = JSON.parse(localStorage.getItem("leaveRequests")) || [];
+    leaveTable.innerHTML = `
+        <tr>
+            <th>Employee Name</th>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>`;
+    leaveRequests.forEach((lr, index) => {
+        let tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${lr.username}</td>
+            <td>${lr.type}</td>
+            <td>${lr.start}</td>
+            <td>${lr.end}</td>
+            <td>${lr.reason}</td>
+            <td>${lr.status}</td>
+            <td>
+                ${lr.status === "Pending" ? `<button class="action-btn approve" data-index="${index}">Approve</button>
+                <button class="action-btn reject" data-index="${index}">Reject</button>` : "-"}
+            </td>
+        `;
+        leaveTable.append(tr);
+    });
+
+    document.querySelectorAll(".approve").forEach(btn => {
+        btn.addEventListener("click", () => {
+            let index = btn.getAttribute("data-index");
+            leaveRequests[index].status = "Approved";
+            localStorage.setItem("leaveRequests", JSON.stringify(leaveRequests));
+            renderLeaves();
+        });
+    });
+    document.querySelectorAll(".reject").forEach(btn => {
+        btn.addEventListener("click", () => {
+            let index = btn.getAttribute("data-index");
+            leaveRequests[index].status = "Rejected";
+            localStorage.setItem("leaveRequests", JSON.stringify(leaveRequests));
+            renderLeaves();
+        });
+    });
+}
+
+renderLeaves();
+</script>
+</body>
+</html>

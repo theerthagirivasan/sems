@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #8f94fb, #4e54c8);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .welcomeContainer {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 700px;
+            margin-bottom: 20px;
+        }
+        #welcomeTag {
+            font-size: 24px;
+            color: #fff;
+            font-weight: bold;
+        }
+        #logoutBtn {
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: #ff5c5c;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        #logoutBtn:hover {
+            background-color: #ff4040;
+        }
+        table {
+            width: 90%;
+            max-width: 700px;
+            border-collapse: collapse;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            background-color: #fff;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4e54c8;
+            color: #fff;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #dcdcff;
+        }
+        #leaveForm {
+            width: 90%;
+            max-width: 700px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        #leaveForm input, #leaveForm select, #leaveForm textarea, #leaveForm button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        #leaveForm button {
+            background-color: #4e54c8;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        #leaveForm button:hover {
+            background-color: #6b70e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="welcomeContainer">
+        <p id="welcomeTag"></p>
+        <button id="logoutBtn">Logout</button>
+    </div>
+
+    <table id="my-employee">
+        <tr>
+            <th>Employee Id</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Salary</th>
+            <th>Save</th>
+        </tr>
+    </table>
+
+    <div id="leaveForm">
+        <h3>Request Leave</h3>
+        <select id="leaveType">
+            <option value="">Select Leave Type</option>
+            <option value="Casual">Function</option>
+            <option value="Sick">Sick</option>
+            <option value="Other">Other</option>
+        </select>
+        <input type="date" id="startDate">
+        <input type="date" id="endDate">
+        <textarea id="reason" placeholder="Reason for leave"></textarea>
+        <button id="submitLeave">Submit Leave Request</button>
+    </div>
+
+    <table id="leaveTable">
+        <tr>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Reason</th>
+            <th>Status</th>
+        </tr>
+    </table>
+
+<script>
+const localData = JSON.parse(localStorage.getItem("LoggedInUser"));
+if(!localData){
+    window.location.href = "../index.html";
+} else if(localData.role !== "Employee"){
+    window.location.href = "../adminpage/dashboard.html";
+}
+
+const pTag = document.getElementById("welcomeTag");
+pTag.textContent = "Welcome " + localData.username;
+
+const logoutBtn = document.getElementById("logoutBtn");
+logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("LoggedInUser");
+    window.location.href = "../index.html";
+});
+
+let employees = JSON.parse(localStorage.getItem("employees")) || [];
+let currentEmployee = employees.find(emp => emp.Name === localData.username);
+
+const table = document.getElementById("my-employee");
+
+if(!currentEmployee){
+    table.innerHTML = `<tr><td colspan="6">Your details are not added yet. Contact Admin.</td></tr>`;
+} else {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+        <td>${currentEmployee.Id}</td>
+        <td>${currentEmployee.Name}</td>
+        <td contenteditable="true">${currentEmployee.Department}</td>
+        <td contenteditable="true">${currentEmployee.Designation}</td>
+        <td contenteditable="true">${currentEmployee.Salary}</td>
+        <td><button id="saveBtn">Save</button></td>
+    `;
+    table.append(tr);
+
+    const saveBtn = document.getElementById("saveBtn");
+    saveBtn.addEventListener("click", () => {
+        const tds = tr.querySelectorAll("td");
+        currentEmployee.Department = tds[2].textContent.trim();
+        currentEmployee.Designation = tds[3].textContent.trim();
+        currentEmployee.Salary = tds[4].textContent.trim();
+
+        employees = employees.map(emp => emp.Name === currentEmployee.Name ? currentEmployee : emp);
+        localStorage.setItem("employees", JSON.stringify(employees));
+        alert("Your details have been updated successfully");
+    });
+}
+
+// Leave Request Functionality
+const leaveType = document.getElementById("leaveType");
+const startDate = document.getElementById("startDate");
+const endDate = document.getElementById("endDate");
+const reason = document.getElementById("reason");
+const submitLeave = document.getElementById("submitLeave");
+const leaveTable = document.getElementById("leaveTable");
+
+function renderLeaves() {
+    let leaveRequests = JSON.parse(localStorage.getItem("leaveRequests")) || [];
+    leaveTable.innerHTML = `
+        <tr>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Reason</th>
+            <th>Status</th>
+        </tr>
+    `;
+    leaveRequests.filter(lr => lr.username === localData.username).forEach(lr => {
+        let tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${lr.type}</td>
+            <td>${lr.start}</td>
+            <td>${lr.end}</td>
+            <td>${lr.reason}</td>
+            <td>${lr.status}</td>
+        `;
+        leaveTable.append(tr);
+    });
+}
+
+renderLeaves();
+
+submitLeave.addEventListener("click", () => {
+    if(!leaveType.value || !startDate.value || !endDate.value || !reason.value.trim()){
+        alert("Please fill all leave request fields");
+        return;
+    }
+
+    let leaveRequests = JSON.parse(localStorage.getItem("leaveRequests")) || [];
+    leaveRequests.push({
+        username: localData.username,
+        type: leaveType.value,
+        start: startDate.value,
+        end: endDate.value,
+        reason: reason.value.trim(),
+        status: "Pending"
+    });
+    localStorage.setItem("leaveRequests", JSON.stringify(leaveRequests));
+    alert("Leave request submitted successfully");
+
+    leaveType.value = "";
+    startDate.value = "";
+    endDate.value = "";
+    reason.value = "";
+
+    renderLeaves();
+});
+</script>
+</body>
+</html>
