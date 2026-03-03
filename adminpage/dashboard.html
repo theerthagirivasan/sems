@@ -61,6 +61,32 @@
         tr:hover {
             background-color: #ececff;
         }
+        .input-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .input-container table td {
+            padding: 8px;
+        }
+        input {
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #create-btn {
+            background-color: #4e54c8;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #create-btn:hover {
+            background-color: #6b70e0;
+        }
         .action-btn {
             padding: 5px 10px;
             margin: 2px;
@@ -72,14 +98,14 @@
         .approve {
             background-color: #4CAF50;
         }
-        .approve:hover {
-            background-color: #45a049;
-        }
         .reject {
             background-color: #f44336;
         }
-        .reject:hover {
-            background-color: #e53935;
+        .edit {
+            background-color: #2196F3;
+        }
+        .delete {
+            background-color: #ff7043;
         }
     </style>
 </head>
@@ -87,6 +113,34 @@
     <div class="welcomeContainer">
         <p id="welcomeTag"></p>
         <button id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="input-container">
+        <table>
+            <tr>
+                <td><label for="id">Employee ID:</label></td>
+                <td><input type="number" id="id" required></td>
+            </tr>
+            <tr>
+                <td><label for="name">Name:</label></td>
+                <td><input type="text" id="name" required></td>
+            </tr>
+            <tr>
+                <td><label for="dept">Department:</label></td>
+                <td><input type="text" id="dept" required></td>
+            </tr>
+            <tr>
+                <td><label for="designation">Designation:</label></td>
+                <td><input type="text" id="designation" required></td>
+            </tr>
+            <tr>
+                <td><label for="salary">Salary:</label></td>
+                <td><input type="number" id="salary" required></td>
+            </tr>
+            <tr>
+                <td colspan="2"><button id="create-btn">Create</button></td>
+            </tr>
+        </table>
     </div>
 
     <h2>Employee List</h2>
@@ -97,6 +151,8 @@
             <th>Department</th>
             <th>Designation</th>
             <th>Salary</th>
+            <th>Edit</th>
+            <th>Delete</th>
         </tr>
     </table>
 
@@ -128,9 +184,16 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
     window.location.href = "../index.html";
 });
 
-// Employee list
-let employees = JSON.parse(localStorage.getItem("employees")) || [];
+const id = document.getElementById("id");
+const name = document.getElementById("name");
+const dept = document.getElementById("dept");
+const designation = document.getElementById("designation");
+const salary = document.getElementById("salary");
+const createBtn = document.getElementById("create-btn");
 const employeeListTable = document.getElementById("employee-list");
+
+let employees = JSON.parse(localStorage.getItem("employees")) || [];
+let editingId = null;
 
 function renderEmployees() {
     employeeListTable.innerHTML = `
@@ -140,6 +203,8 @@ function renderEmployees() {
             <th>Department</th>
             <th>Designation</th>
             <th>Salary</th>
+            <th>Edit</th>
+            <th>Delete</th>
         </tr>`;
     employees.forEach(emp => {
         let tr = document.createElement("tr");
@@ -149,12 +214,73 @@ function renderEmployees() {
             <td>${emp.Department}</td>
             <td>${emp.Designation}</td>
             <td>${emp.Salary}</td>
+            <td><button class="action-btn edit" data-id="${emp.Id}">Edit</button></td>
+            <td><button class="action-btn delete" data-id="${emp.Id}">Delete</button></td>
         `;
         employeeListTable.append(tr);
     });
+
+    document.querySelectorAll(".delete").forEach(btn => {
+        btn.addEventListener("click", () => {
+            employees = employees.filter(e => e.Id != btn.dataset.id);
+            localStorage.setItem("employees", JSON.stringify(employees));
+            renderEmployees();
+        });
+    });
+
+    document.querySelectorAll(".edit").forEach(btn => {
+        btn.addEventListener("click", () => {
+            let emp = employees.find(e => e.Id == btn.dataset.id);
+            id.value = emp.Id;
+            name.value = emp.Name;
+            dept.value = emp.Department;
+            designation.value = emp.Designation;
+            salary.value = emp.Salary;
+            editingId = emp.Id;
+        });
+    });
 }
+
 renderEmployees();
 
+createBtn.addEventListener("click", () => {
+    let newEmployee = {
+        Id: id.value.trim(),
+        Name: name.value.trim(),
+        Department: dept.value.trim(),
+        Designation: designation.value.trim(),
+        Salary: salary.value.trim()
+    };
+
+    if(!newEmployee.Id || !newEmployee.Name || !newEmployee.Department || !newEmployee.Designation || !newEmployee.Salary){
+        alert("Please fill in all fields");
+        return;
+    }
+
+    if(editingId === null){
+        if(employees.some(emp => emp.Id === newEmployee.Id)){
+            alert("Employee with this ID already exists");
+            return;
+        }
+        employees.push(newEmployee);
+        alert("Employee added successfully");
+    } else {
+        employees = employees.map(emp => emp.Id === editingId ? newEmployee : emp);
+        alert("Employee updated successfully");
+        editingId = null;
+    }
+
+    localStorage.setItem("employees", JSON.stringify(employees));
+    renderEmployees();
+
+    id.value = "";
+    name.value = "";
+    dept.value = "";
+    designation.value = "";
+    salary.value = "";
+});
+
+// Leave Management
 const leaveTable = document.getElementById("leaveRequestsTable");
 
 function renderLeaves() {
@@ -179,26 +305,30 @@ function renderLeaves() {
             <td>${lr.reason}</td>
             <td>${lr.status}</td>
             <td>
-                ${lr.status === "Pending" ? `<button class="action-btn approve" data-index="${index}">Approve</button>
-                <button class="action-btn reject" data-index="${index}">Reject</button>` : "-"}
-            </td>
-        `;
+                ${lr.status === "Pending" ? 
+                `<button class="action-btn approve" data-index="${index}">Approve</button>
+                 <button class="action-btn reject" data-index="${index}">Reject</button>` 
+                : "-"}
+            </td>`;
         leaveTable.append(tr);
     });
 
     document.querySelectorAll(".approve").forEach(btn => {
         btn.addEventListener("click", () => {
-            let index = btn.getAttribute("data-index");
-            leaveRequests[index].status = "Approved";
-            localStorage.setItem("leaveRequests", JSON.stringify(leaveRequests));
+            let index = btn.dataset.index;
+            let leaves = JSON.parse(localStorage.getItem("leaveRequests")) || [];
+            leaves[index].status = "Approved";
+            localStorage.setItem("leaveRequests", JSON.stringify(leaves));
             renderLeaves();
         });
     });
+
     document.querySelectorAll(".reject").forEach(btn => {
         btn.addEventListener("click", () => {
-            let index = btn.getAttribute("data-index");
-            leaveRequests[index].status = "Rejected";
-            localStorage.setItem("leaveRequests", JSON.stringify(leaveRequests));
+            let index = btn.dataset.index;
+            let leaves = JSON.parse(localStorage.getItem("leaveRequests")) || [];
+            leaves[index].status = "Rejected";
+            localStorage.setItem("leaveRequests", JSON.stringify(leaves));
             renderLeaves();
         });
     });
